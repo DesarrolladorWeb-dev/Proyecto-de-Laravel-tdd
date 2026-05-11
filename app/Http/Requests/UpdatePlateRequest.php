@@ -11,7 +11,8 @@ class UpdatePlateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        // solo los autenticados ingresan
+        return auth()->check();
     }
 
     /**
@@ -22,7 +23,9 @@ class UpdatePlateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required',
+            'price' => 'required',
+            'description' => 'required'
         ];
     }
 }

@@ -49,9 +49,16 @@ class PlateController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePlateRequest $request, Plate $plate)
+    public function update(UpdatePlateRequest $request, Restaurant $restaurant, Plate $plate)
     {
-        //
+         // solo el dueño de este restaurante puede crear un platillo
+        Gate::authorize('view',$restaurant);
+
+        //la actualizacion del platillo - (este update regrsa un booleano - por eso usamos el fresh)
+        $plate->update($request->validated());
+
+        // Aqui si se le pasa el array y no una colecccion - Realizamos un fresh (entra a la base de datos y me trae lo ultimo)
+        return jsonResponse(['plate' =>  PlateResource::make($plate->fresh())]);
     }
 
     /**

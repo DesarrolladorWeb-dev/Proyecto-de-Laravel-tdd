@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Plate;
 
+use App\Models\Plate;
 use App\Models\Restaurant;
 use App\Models\User;
 use Database\Seeders\UserSeeder;
@@ -9,32 +10,30 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class CreatePlateTest extends TestCase
+class EditPlateTest extends TestCase
 {
     use RefreshDatabase;
     protected Restaurant $restaurant;
+    protected Plate $plate;
 
-
-    public function test_an_authenticated_user_can_create_a_plate(): void
+    public function test_an_authenticated_user_can_edit_a_plate(): void
     {
     //    $this->withoutExceptionHandling();//miramos exactamente los errores
         //TENIENDO
         $data = [
-            'name' => 'Name test' ,
-            'description' => 'Description test',
-            'price' => '$123',
+            'name' => 'NEW Name test' ,
+            'description' => 'NEW Description test',
+            'price' => 'NEW $123',
             
         ];
         //HACIENDO
         $response = 
-        $this->apiAs(User::find(1), 'post', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates", $data);
+        $this->apiAs(User::find(1), 'put', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates/{$this->plate->id}", $data);
 
-// $response->dd();
 
         //ESPERANDO
         $response->assertStatus(200);
-        //esperamos tener una estructura de JSON
-
+        //esperamos que tenga esta estructura 
         $response->assertJsonStructure([
                 'data' => ['plate' => [
                     'id','restaurant_id','name', 'description','price'
@@ -46,89 +45,90 @@ class CreatePlateTest extends TestCase
             
                 'plate' => [
                         ...$data,
-                        'id' => 1,
+                        'id' => $this->plate->id,
                         'restaurant_id' => $this->restaurant->id,
                 ]
             ]
         ] );
 
-        //Obligamos que esta informacion($data) esta en base de datos 
-        $this->assertDatabaseHas('plates',$data);
+        //Missin: ya no deberia estar la version anterior como estaba antes 
+        $this->assertDatabaseMissing('plates',[
+            'name' => 'Name test' ,
+            'description' => 'Description test',
+            'price' => '$123',
+            
+        ]);
 
     }
-    //esto es para la validacion de campo name
 
     public function test_plate_name_is_resquired(){
         //TENIENDO
         $data = [
             'name' => '' ,
-            'description' => 'Description test',
-            'price' => '$123',
+            'description' => 'New New Description test',
+            'price' => 'New New $123',
             
         ];
         //HACIENDO
         $response = 
-        $this->apiAs(User::find(1), 'post', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates", $data);
+        $this->apiAs(User::find(1), 'put', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates/{$this->plate->id}", $data);
 
         $response->assertStatus(422);
         $response->assertJsonStructure(['errors' => ['name']]);
 
     }
-        //esto es para la validacion de campo description 
     public function test_plate_description_is_resquired(){
         //TENIENDO
         $data = [
-            'name' => 'Name test' ,
+            'name' => 'New Name test' ,
             'description' => '',
-            'price' => '$123',
+            'price' => 'New $123',
             
         ];
         //HACIENDO
         $response = 
-        $this->apiAs(User::find(1), 'post', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates", $data);
+        $this->apiAs(User::find(1), 'put', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates/{$this->plate->id}", $data);
 
         $response->assertStatus(422);
         $response->assertJsonStructure(['errors' => ['description']]);
 
     }
-        //esto es para la validacion de campo price
        public function test_plate_price_is_resquired(){
         //TENIENDO
         $data = [
-            'name' => 'Name test' ,
-            'description' => 'Description test',
+            'name' => 'New Name test' ,
+            'description' => 'New Description test',
             'price' => '',
             
         ];
         //HACIENDO
         $response = 
-        $this->apiAs(User::find(1), 'post', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates", $data);
+        $this->apiAs(User::find(1), 'put', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates/{$this->plate->id}", $data);
 
         $response->assertStatus(422);
         $response->assertJsonStructure(['errors' => ['price']]);
 
     }
 
-    //Que un usuario que no este autenticado no pueda generar nada 
     public function test_a_unautheticated_user_cannot_update_a_plate():void {
         $data = [
-            'name' => 'Name test' ,
-            'description' => 'Description test',
-            'price' => '$123',
+            'name' => 'NEW Name test' ,
+            'description' => 'NEW Description test',
+            'price' => 'NEW $123',
             
         ];
         //HACIENDO
         $response = 
-        $this->postJson("{$this->apiBase}/restaurants/{$this->restaurant->id}/plates", $data);
+        $this->putJson("{$this->apiBase}/restaurants/{$this->restaurant->id}/plates/{$this->plate->id}", $data);
            //ESPERANDO
         $response->assertStatus(401);
     }
-//Que si este logueaado pero que no sea dueño del post del platillo que no pueda modificarlo
+
     public function test_a_autheticated_user_can_only_update_their_plates():void {
         $data = [
-            'name' => 'Name test' ,
-            'description' => 'Description test',
-            'price' => '$123',
+            'name' => 'New Name test' ,
+            'description' => 'New Description test',
+            'price' => 'New $123',
             
         ];
         //creo un usuario 
@@ -136,7 +136,7 @@ class CreatePlateTest extends TestCase
         
         //HACIENDO
         $response = 
-        $this->apiAs($user,'post',"{$this->apiBase}/restaurants/{$this->restaurant->id}/plates", $data);
+        $this->apiAs($user,'put',"{$this->apiBase}/restaurants/{$this->restaurant->id}/plates/{$this->plate->id}", $data);
            //ESPERANDO
         //este 403 que no puede modificar nada de este restaurante (solo se queda en el Gate del Store del PlateController)
         $response->assertStatus(403);
@@ -146,13 +146,16 @@ class CreatePlateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // necesitamos el usuario para crear el restaurante 
+       
         $this->seed(UserSeeder::class);
 
-        // necesitamso un usuario para poder generar nuestro restaurante 
-        // que los platillos pertenescan a un restaurante
+       
         $this->restaurant = Restaurant::factory()->create([
                 'user_id' => 1
+        ]);
+        // vamos a generar un nuevo platillo 
+        $this->plate = Plate::factory()->create([
+                'restaurant_id' => 1
         ]);
     }
 }

@@ -21,7 +21,7 @@ class PlateListTest extends TestCase
     {
         // para ver el handlin de los errores - se puede saber mas el porque del errir 
             // $this->withExceptionHandling();
-            $response = $this->apiAs(User::find(1), 'get', "{$this->apiBase}/{$this->restaurant->id}/plates");
+            $response = $this->apiAs(User::find(1), 'get', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates");
             // $response->dd(); //vemos que me trae (created-at,id,restauran , updated etc)
             // contar la cantidad de elementos que quiero que se vea 
             $response->assertStatus(200);
@@ -47,7 +47,7 @@ class PlateListTest extends TestCase
     // $this->withoutExceptionHandling();
     // teniendo 
     // haciendo
-        $response = $this->getJson("{$this->apiBase}/{$this->restaurant->id}/plates");
+        $response = $this->getJson("{$this->apiBase}/restaurants/{$this->restaurant->id}/plates");
         // $response->dd();
     // esperando 
         $response->assertStatus(401);
@@ -57,7 +57,7 @@ class PlateListTest extends TestCase
       public function test_an_authenticated_user_must_see_only_their_plates(): void
     {
             $user = User::factory()->create();
-            $response = $this->apiAs($user, 'get', "{$this->apiBase}/{$this->restaurant->id}/plates");
+            $response = $this->apiAs($user, 'get', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates");
             // contar la cantidad de elementos que quiero que se vea 
             $response->assertStatus(403);
         
@@ -66,7 +66,7 @@ class PlateListTest extends TestCase
      public function test_a_user_must_see_their_paginated_plates(): void
     {
             // $this->withoutExceptionHandling();
-            $response = $this->apiAs(User::find(1), 'get', "{$this->apiBase}/{$this->restaurant->id}/plates");
+            $response = $this->apiAs(User::find(1), 'get', "{$this->apiBase}/restaurants/{$this->restaurant->id}/plates");
             // $response->dd();
             // contar la cantidad de elementos que quiero que se vea 
             $response->assertStatus(200);
